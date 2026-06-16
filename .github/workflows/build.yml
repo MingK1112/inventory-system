@@ -3,12 +3,12 @@ name: 打包出入库系统
 on:
   push:
     branches: [main, master]
-  workflow_dispatch:  # 允许手动触发
+  workflow_dispatch:
 
 jobs:
-  # ---- macOS 通用版 (Intel + M1/M2/M3) ----
+  # ---- macOS（Intel + M1/M2/M3 通用，M芯片通过 Rosetta 2 运行）----
   build-macos:
-    runs-on: macos-latest
+    runs-on: macos-13
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
@@ -20,14 +20,16 @@ jobs:
           python-version: '3.12'
 
       - name: 安装依赖
-        run: pip install PySide6==6.7.0 pyinstaller
-
-      - name: 打包 macOS (Intel + M芯片通用)
         run: |
+          cd inventory_system
+          pip install PySide6==6.7.0 pyinstaller
+
+      - name: 打包 macOS
+        run: |
+          cd inventory_system
           pyinstaller \
             --windowed --onedir \
             --name "出入库系统" \
-            --target-arch universal2 \
             --exclude-module openpyxl \
             --exclude-module lxml \
             --add-data "styles.qss:." \
@@ -39,14 +41,14 @@ jobs:
 
       - name: 压缩 .app
         run: |
-          cd dist
-          zip -r 出入库系统_macOS_Intel_M芯片.zip 出入库系统.app
+          cd inventory_system/dist
+          zip -r 出入库系统_macOS.zip 出入库系统.app
 
       - name: 上传产物
         uses: actions/upload-artifact@v4
         with:
-          name: 出入库系统_macOS_Intel_M芯片
-          path: dist/出入库系统_macOS_Intel_M芯片.zip
+          name: 出入库系统_macOS
+          path: inventory_system/dist/出入库系统_macOS.zip
 
   # ---- Windows 10 / 11 ----
   build-windows:
@@ -62,18 +64,22 @@ jobs:
           python-version: '3.12'
 
       - name: 安装依赖
-        run: pip install PySide6==6.7.0 pyinstaller openpyxl
+        run: |
+          cd inventory_system
+          pip install PySide6==6.7.0 pyinstaller openpyxl
 
       - name: 打包 Windows 10/11
         run: |
+          cd inventory_system
           pyinstaller --windowed --onedir --name "出入库系统" --add-data "styles.qss;." --add-data "styles_light.qss;." --add-data "config.json;." --add-data "oil_inventory.db;." --add-data "assets;assets" main.py
 
       - name: 压缩产物
         run: |
-          Compress-Archive -Path dist\出入库系统\* -DestinationPath dist\出入库系统_Windows10_11.zip
+          cd inventory_system\dist
+          Compress-Archive -Path 出入库系统\* -DestinationPath 出入库系统_Windows10_11.zip
 
       - name: 上传产物
         uses: actions/upload-artifact@v4
         with:
           name: 出入库系统_Windows10_11
-          path: dist/出入库系统_Windows10_11.zip
+          path: inventory_system\dist\出入库系统_Windows10_11.zip

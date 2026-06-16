@@ -1,0 +1,73 @@
+name: 打包出入库系统
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  # ---- macOS 通用版 (Intel + M1/M2/M3) ----
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 安装依赖
+        run: pip install PySide6==6.7.0 pyinstaller openpyxl
+
+      - name: 打包 macOS (Intel + M芯片通用)
+        run: |
+          pyinstaller \
+            --windowed --onedir \
+            --name "出入库系统" \
+            --target-arch universal2 \
+            --add-data "styles.qss:." \
+            --add-data "styles_light.qss:." \
+            --add-data "config.json:." \
+            --add-data "oil_inventory.db:." \
+            --add-data "assets:assets" \
+            main.py
+
+      - name: 压缩 .app
+        run: |
+          cd dist
+          zip -r 出入库系统_macOS_Intel_M芯片.zip 出入库系统.app
+
+      - name: 上传产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: 出入库系统_macOS_Intel_M芯片
+          path: dist/出入库系统_macOS_Intel_M芯片.zip
+
+  # ---- Windows 10 / 11 ----
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 安装依赖
+        run: pip install PySide6==6.7.0 pyinstaller openpyxl
+
+      - name: 打包 Windows 10/11
+        run: |
+          pyinstaller --windowed --onedir --name "出入库系统" --add-data "styles.qss;." --add-data "styles_light.qss;." --add-data "config.json;." --add-data "oil_inventory.db;." --add-data "assets;assets" main.py
+
+      - name: 压缩产物
+        run: |
+          Compress-Archive -Path dist\出入库系统\* -DestinationPath dist\出入库系统_Windows10_11.zip
+
+      - name: 上传产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: 出入库系统_Windows10_11
+          path: dist/出入库系统_Windows10_11.zip
